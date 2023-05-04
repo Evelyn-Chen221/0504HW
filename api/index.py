@@ -1,3 +1,6 @@
+import openai
+import os
+
 from flask import Flask, request, abort
 
 from linebot import (
@@ -12,12 +15,23 @@ from linebot.models import (
 
 app = Flask(__name__)
 
-line_bot_api = LineBotApi('Spk+zx1Cu/+CjwAyWKl3LcfSHkTQ1cXmeAU10EWkDvYdk6otZJicpzeYu6fH0dAVU8oKF8jFJdCioLMPlhIND2AVe/zsY533PWHkF+ZdRJJyBsf92JHiF+bOjoPaJDZbZ+ZDQFx2rksyuHabfc2RgwdB04t89/1O/w1cDnyilFU=')
-webhook_handler = WebhookHandler('85488642ac423be5bf7f12a55d2091d1')
+line_bot_api = LineBotApi('WnOAh83Ss4qSMw//+9SwDbaeQNahdjrp0TpsK6S3U32kwsr/4YVxTnH9O4nAUFySwdB04t89/1O/w1cDnyilFU=')
+webhook_handler = WebhookHandler('4a02436c986b12d55a812b590e515f96')
+
+# 設定 OpenAI API 密鑰
+openai.api_key = os.environ["OPENAI_API_KEY"]
+# openai.api_key = "OPENAI_API_KEY"
+
+# 設定 GPT-3.5 模型的檢索引擎
+model_engine = "text-davinci-003"
+
+# 設定生成的文本長度
+output_length = 300
+
 
 @app.route("/")
 def home():
-    return "LINE BOT API Server is Running"
+    return "LINE BOT API Server is running."
 
 @app.route("/callback", methods=['POST'])
 def callback():
@@ -40,9 +54,20 @@ def callback():
 
 @webhook_handler.add(MessageEvent, message=TextMessage)
 def handle_message(event):
+
+    # 使用 GPT-3.5 模型生成文本
+    response = openai.Completion.create(
+        engine=model_engine,
+        prompt=event.message.text,
+        max_tokens=output_length,
+    )
+
+    # 取得生成的文本
+    output_text = response.choices[0].text.strip()
+
     line_bot_api.reply_message(
         event.reply_token,
-        TextSendMessage(text=event.message.text))
+        TextSendMessage(text=output_text))
 
 
 if __name__ == "__main__":
